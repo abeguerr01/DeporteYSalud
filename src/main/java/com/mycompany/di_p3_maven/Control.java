@@ -372,70 +372,106 @@ public class Control extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
     
     
-    private void jBguardarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jBguardarActionPerformed
+    private void jBguardarActionPerformed(java.awt.event.ActionEvent evt) {                                          
+    // 1. Validación de campos vacíos
         if (jTFpeso.getText().isEmpty() || jTFaltura.getText().isEmpty() || jTFcalcon.getText().isEmpty() || jTFcalquem.getText().isEmpty()) {
-            jLdepu.setText("Error al guardar los datos");
+            jLdepu.setText("Error: Rellena todos los campos.");
             return;
         }
-        
-        String NOMBRE_ARCHIVO = "control_datos.xlsx";
-        File archivo = new File(NOMBRE_ARCHIVO);
-        Workbook libroExcel = new XSSFWorkbook();
-        Sheet hoja = (Sheet) libroExcel.createSheet("Datos");
-        
-        try {
-            String pesoS = jTFpeso.getText();
-            String alturaS = jTFaltura.getText();
-            double pesoD = Double.parseDouble(pesoS);
-            double alturaD = Double.parseDouble(alturaS);
-            double imc = pesoD/(alturaD*alturaD);
-            
-            String calconS = jTFcalcon.getText();
-            String calquemS = jTFcalquem.getText();
-            int calconI = Integer.parseInt(calconS);
-            int calquemI = Integer.parseInt(calquemS);
-            double calbal = calconI - calquemI;
-            
-            if (archivo.exists()) {
-            // El archivo existe: Cargar el Workbook existente
-            FileInputStream fis = new FileInputStream(archivo);
-            libroExcel = new XSSFWorkbook(fis);
-            hoja = (Sheet) libroExcel.getSheet("Datos");
-            if (hoja == null) {
-                // Si la hoja 'Datos' no existe por alguna razón
-                hoja = (Sheet) libroExcel.createSheet("Datos");
-            }
-            fis.close();
-            
-        } else {
-            // El archivo NO existe: Crear un nuevo Workbook y agregar encabezados
-            libroExcel = new XSSFWorkbook();
-            hoja = (Sheet) libroExcel.createSheet("Datos");
 
-            // Crear fila de encabezados
-            Row encabezado = hoja.createRow(0);
-            encabezado.createCell(0).setCellValue("Fecha");
-            encabezado.createCell(1).setCellValue("Hora");
-            encabezado.createCell(2).setCellValue("Peso (kg)");
-            encabezado.createCell(3).setCellValue("Altura (m)");
-            encabezado.createCell(4).setCellValue("IMC");
-            encabezado.createCell(5).setCellValue("Calorias Consumidas");
-            encabezado.createCell(6).setCellValue("Calorias Quemadas");
-            encabezado.createCell(7).setCellValue("Balance Calorico");
-        }
-            
-            // 3. Añadir la nueva fila de datos
-            int numeroFila = hoja.getPhysicalNumberOfRows(); // Obtiene el número de filas existentes para añadir al final
-            Row nuevaFila = hoja.createRow(numeroFila);
+        final String NOMBRE_ARCHIVO = "control_datos.xlsx";
+        final String RUTA_IMAGEN = "src/main/resources/img/fondoMenu.jpg";
+        File archivo = new File(NOMBRE_ARCHIVO);
+
+        Workbook libroExcel = null;
+        Sheet hoja = null;
+        double pesoD, alturaD, imc, calbal;
+        int calconI, calquemI;
+
+        int numeroFilaParaDatos; 
+
+        try {
+            pesoD = Double.parseDouble(jTFpeso.getText());
+            alturaD = Double.parseDouble(jTFaltura.getText());
+            imc = pesoD / (alturaD * alturaD);
+            calconI = Integer.parseInt(jTFcalcon.getText());
+            calquemI = Integer.parseInt(jTFcalquem.getText());
+            calbal = calconI - calquemI;
+
+            if (archivo.exists()) {
+                try (FileInputStream fis = new FileInputStream(archivo)) {
+                    libroExcel = new XSSFWorkbook(fis);
+                }
+                hoja = libroExcel.getSheet("Datos");
+                if (hoja == null) {
+                    hoja = libroExcel.createSheet("Datos");
+                }
+
+                numeroFilaParaDatos = hoja.getPhysicalNumberOfRows(); 
+
+            } else {
+                libroExcel = new XSSFWorkbook();
+                hoja = libroExcel.createSheet("Datos");
+
+                final int FILA_ENCABEZADO = 4;
+
+                // A) Insertar Imagen
+                try {
+                    InputStream is = Files.newInputStream(Paths.get(RUTA_IMAGEN));
+                    byte[] bytesImagen = IOUtils.toByteArray(is);
+                    int idImagen = libroExcel.addPicture(bytesImagen, Workbook.PICTURE_TYPE_PNG);
+                    is.close();
+
+                    CreationHelper helper = libroExcel.getCreationHelper();
+                    Drawing drawing = hoja.createDrawingPatriarch();
+                    ClientAnchor anchor = helper.createClientAnchor();
+                    anchor.setCol1(0); 
+                    anchor.setRow1(0);
+                    anchor.setCol2(4);
+                    anchor.setRow2(FILA_ENCABEZADO);
+                    drawing.createPicture(anchor, idImagen);
+
+                } catch (IOException e) {
+                    System.err.println("Advertencia: No se pudo cargar o insertar la imagen '" + RUTA_IMAGEN + "'.");
+                }
+                CellStyle estiloEncabezado = libroExcel.createCellStyle();
+                estiloEncabezado.setFillForegroundColor(IndexedColors.GREEN.getIndex());
+                estiloEncabezado.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+                Font font = libroExcel.createFont();
+                font.setBold(true);
+                estiloEncabezado.setFont(font);
+                estiloEncabezado.setAlignment(HorizontalAlignment.CENTER);
+
+                Row encabezado = hoja.createRow(FILA_ENCABEZADO); 
+
+                String[] nombresEncabezados = {
+                    "Fecha", "Hora", "Peso (kg)", "Altura (m)", "IMC", 
+                    "Calorias Consumidas", "Calorias Quemadas", "Balance Calorico"
+                };
+
+                for (int i = 0; i < nombresEncabezados.length; i++) {
+                    Cell cell = encabezado.createCell(i);
+                    cell.setCellValue(nombresEncabezados[i]);
+                    cell.setCellStyle(estiloEncabezado);
+                }
+
+                for (int i = 0; i < nombresEncabezados.length; i++) {
+                     hoja.autoSizeColumn(i);
+                }
+
+                numeroFilaParaDatos = FILA_ENCABEZADO + 1;
+            }
+
+            Row nuevaFila = hoja.createRow(numeroFilaParaDatos); 
 
             // Obtener la fecha y hora actuales
-            java.text.SimpleDateFormat dateFormat = new java.text.SimpleDateFormat("dd/MM/yyyy");
-            java.text.SimpleDateFormat timeFormat = new java.text.SimpleDateFormat("HH:mm:ss");
-            java.util.Date ahora = new java.util.Date();
+            SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
+            SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm:ss");
+            Date ahora = new Date();
 
             // Llenar las celdas de la nueva fila
-            nuevaFila.createCell(0).setCellValue(dateFormat.format(ahora)); // Fecha
-            nuevaFila.createCell(1).setCellValue(timeFormat.format(ahora)); // Hora
+            nuevaFila.createCell(0).setCellValue(dateFormat.format(ahora));
+            nuevaFila.createCell(1).setCellValue(timeFormat.format(ahora));
             nuevaFila.createCell(2).setCellValue(pesoD);
             nuevaFila.createCell(3).setCellValue(alturaD);
             nuevaFila.createCell(4).setCellValue(imc);
@@ -443,27 +479,27 @@ public class Control extends javax.swing.JFrame {
             nuevaFila.createCell(6).setCellValue(calquemI);
             nuevaFila.createCell(7).setCellValue(calbal);
 
-            // 4. Escribir el Workbook de nuevo al archivo
             try (FileOutputStream fos = new FileOutputStream(archivo)) {
                 libroExcel.write(fos);
             }
 
-        jLdepu.setText("Datos guardados en '" + NOMBRE_ARCHIVO + "' con éxito.");
-            
-        }catch (NumberFormatException e) {
-            jLdepu.setText("Asegúrate de que los campos tienen formato numérico válido");
+            jLdepu.setText("Datos guardados en '" + NOMBRE_ARCHIVO + "' con éxito.");
+
+        } catch (NumberFormatException e) {
+            jLdepu.setText("Error de formato: Asegúrate de que los campos tienen formato numérico válido.");
         } catch (IOException e) {
-            jLdepu.setText("Error al manejar el archivo Excel");
+            jLdepu.setText("Error al manejar el archivo Excel.");
+            System.out.println("Error: " + e.getMessage());
         } finally {
             if (libroExcel != null) {
                 try {
                     libroExcel.close();
                 } catch (IOException e) {
-                    System.out.println("Error al cerrar el Workbook");
+                    System.err.println("Error al cerrar el Workbook: " + e.getMessage());
                 }
             }
         }
-    }//GEN-LAST:event_jBguardarActionPerformed
+    } 
 
     private void jBimcActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jBimcActionPerformed
         String pesoS = jTFpeso.getText();

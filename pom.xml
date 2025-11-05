@@ -9,17 +9,39 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.release>24</maven.compiler.release>
         <exec.mainClass>com.mycompany.di_p3_maven.DI_p3_maven</exec.mainClass>
+        <itext.version>7.2.5</itext.version>
     </properties>
     <dependencies>
         <dependency>
             <groupId>org.apache.poi</groupId>
             <artifactId>poi</artifactId>
-            <version>4.1.2</version> <!-- Reemplaza con la versión más reciente -->
+            <version>4.1.2</version>
         </dependency>
         <dependency>
             <groupId>org.apache.poi</groupId>
             <artifactId>poi-ooxml</artifactId>
-            <version>4.1.2</version> <!-- Reemplaza con la versión más reciente -->
+            <version>4.1.2</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jfree</groupId>
+            <artifactId>jfreechart</artifactId>
+            <version>1.5.5</version>
+        </dependency>
+        <dependency>
+            <groupId>com.itextpdf</groupId>
+            <artifactId>kernel</artifactId>
+            <version>7.2.5</version>
+        </dependency>
+        <dependency>
+            <groupId>com.itextpdf</groupId>
+            <artifactId>layout</artifactId>
+            <version>7.2.5</version>
+        </dependency>
+        <dependency>
+            <groupId>tech.deepdreams</groupId>
+            <artifactId>worker-lambda</artifactId>
+            <version>0.0.16-RELEASE</version>
+            <type>jar</type>
         </dependency>
     </dependencies>
 </project>
